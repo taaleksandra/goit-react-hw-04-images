@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import clsx from 'clsx';
 
 import css from '../components/App.module.css';
@@ -11,83 +11,71 @@ import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Modal } from './Modal/Modal';
 
-export class App extends Component {
-  state = {
-    searchQuery: '',
-    images: [],
-    pageNumber: 1,
-    isLoading: false,
-    modalImg: '',
-    idModalOpen: false,
-  };
+export const App = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalImg, setModalImg] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  handleFetchImg = async searchQuery => {
-    this.setState({ isLoading: true, pageNumber: 1 });
+  const handleFetchImg = async searchQuery => {
+    setIsLoading(true);
+    setPageNumber(1);
 
     try {
       const images = await fetchImg(searchQuery, 1);
-      this.setState({ images, searchQuery });
+      setImages(images);
+      setSearchQuery(searchQuery);
     } catch (err) {
       console.error(err);
     } finally {
-      this.setState(prev => {
-        return { pageNumber: prev.pageNumber + 1, isLoading: false };
-      });
+      setPageNumber(pageNumber + 1);
+      setIsLoading(false);
     }
   };
 
-  handleLoadMore = async () => {
-    this.setState({ isLoading: true });
+  const handleLoadMore = async () => {
+    setIsLoading(true);
 
     try {
-      const nextImages = await fetchImg(
-        this.state.searchQuery,
-        this.state.pageNumber
-      );
-      this.setState(prev => {
-        return {
-          images: [...prev.images, ...nextImages],
-        };
-      });
+      const nextImages = await fetchImg(searchQuery, pageNumber);
+      setImages(images.concat(nextImages));
     } catch (err) {
       console.error(err);
     } finally {
-      this.setState(prev => {
-        return { pageNumber: prev.pageNumber + 1, isLoading: false };
-      });
+      setIsLoading(false);
+      setPageNumber(pageNumber + 1);
     }
   };
 
-  handleModalOpen = evt => {
+  const handleModalOpen = evt => {
     const modalImgId = evt.currentTarget.id;
-    const images = this.state.images;
 
     const modalImg = images.find(image => image.id === Number(modalImgId));
 
-    this.setState({ isModalOpen: true, modalImg });
+    setModalImg(modalImg);
+    setIsModalOpen(true);
   };
 
-  handleModalClose = evt => {
+  const handleModalClose = evt => {
     if (evt.target.tagName.toLowerCase() !== 'img') {
-      this.setState({ isModalOpen: false });
+      setIsModalOpen(false);
     }
     // this.setState({ isModalOpen: false });
   };
 
-  render() {
-    const { images, isLoading, isModalOpen, modalImg } = this.state;
-    return (
-      <div className={clsx(css.App)}>
-        <Searchbar onSubmit={this.handleFetchImg} />
-        {isModalOpen && (
-          <Modal modalImg={modalImg} onModalClick={this.handleModalClose} />
-        )}
-        <ImageGallery>
-          <ImageGalleryItem images={images} onImgClick={this.handleModalOpen} />
-        </ImageGallery>
-        {isLoading && <Loader />}
-        {images.length > 0 && <Button onClick={this.handleLoadMore} />}
-      </div>
-    );
-  }
-}
+  return (
+    <div className={clsx(css.App)}>
+      <Searchbar onSubmit={handleFetchImg} />
+      {isModalOpen && (
+        <Modal modalImg={modalImg} onModalClick={handleModalClose} />
+      )}
+      <ImageGallery>
+        <ImageGalleryItem images={images} onImgClick={handleModalOpen} />
+      </ImageGallery>
+      {isLoading && <Loader />}
+      {images.length > 0 && <Button onClick={handleLoadMore} />}
+    </div>
+  );
+};
