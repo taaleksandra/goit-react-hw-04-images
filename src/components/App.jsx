@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
 
 import css from '../components/App.module.css';
